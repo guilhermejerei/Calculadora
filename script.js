@@ -365,6 +365,30 @@ botaoLimparHistorico.addEventListener("click", function () {
     renderizarHistorico();
 });
 
+// === Toggle do histórico (desktop e mobile) ===
+// O painel começa colapsado via classe no HTML — sem flash ao carregar.
+const painelHistorico = document.getElementById("historico-painel");
+const headerHistorico = document.getElementById("historico-header");
+
+headerHistorico.addEventListener("click", function () {
+    // Esconde o scroll da lista durante a animação para evitar bug visual
+    listaHistorico.style.overflowY = "hidden";
+
+    painelHistorico.classList.toggle("colapsado");
+
+    // Restaura o scroll após a animação — só se estiver expandido
+    setTimeout(function () {
+        if (!painelHistorico.classList.contains("colapsado")) {
+            listaHistorico.style.overflowY = "auto";
+        }
+    }, 460);
+});
+
+// Ao redimensionar, garante que não fica num estado inconsistente
+window.addEventListener("resize", function () {
+    // nada a fazer — o estado colapsado é válido em qualquer tamanho
+});
+
 // As espirais decorativas do caderninho agora são geradas via CSS (radial-gradient),
 // eliminando a necessidade de manipulação do DOM via JavaScript.
 

@@ -268,48 +268,96 @@ body {
    PAINEL DE HISTÓRICO — estética de caderninho
    ================================================================ */
 
-/* Painel lateral: fundo creme-amarelado escurecido com pontos de espiral simulados via
-   radial-gradient na faixa esquerda de 28px (padding-left existente garante que o
-   conteúdo não sobreponha os pontos). max-height limita o crescimento vertical.
-   position: relative necessário para o posicionamento correto do conteúdo. */
+/* Painel lateral: usa max-height para animar abertura/fechamento.
+   overflow: hidden é obrigatório para a animação funcionar. */
 .historico-painel {
     width: 230px;
-    background:
-        radial-gradient(circle, #4a2e1a 5px, transparent 5px) 7px 16px / 24px 28px repeat-y,
-        #c9b99a;
+    background: #c9b99a;
     border-radius: 6px;
     padding: 16px;
-    padding-left: 28px;
+    padding-left: 32px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55), 0 4px 16px rgba(0, 0, 0, 0.35);
-    border-left: 4px solid #6b3a23;
-    align-self: stretch;
+    align-self: flex-start;
     display: flex;
     flex-direction: column;
-    min-height: 200px;
-    max-height: 520px;
     position: relative;
+    overflow: hidden;
+    /* Estado expandido: max-height generoso o suficiente para caber tudo */
+    max-height: 500px;
+    /* Abre devagar (ease-out), fecha rápido (linear) */
+    transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.3s ease;
 }
 
-/* Título do caderninho: fonte leve, cor marrom-escuro uniforme */
+/* Colapsado: max-height pequeno o bastante para mostrar só o header (~54px) */
+.historico-painel.colapsado {
+    max-height: 54px;
+}
+
+/* Faixa de espirais: coluna na borda esquerda do painel.
+   Começa 30px abaixo do teto e termina 30px acima do chão. */
+.historico-painel::before {
+    content: '';
+    position: absolute;
+    top: 30px;
+    left: 0;
+    width: 24px;
+    bottom: 30px;
+    background:
+        radial-gradient(circle, #4a2e1a 4px, transparent 4px)
+        center 10px / 24px 30px repeat-y;
+    pointer-events: none;
+}
+
+/* Título do caderninho: font leve, cor marrom-escuro uniforme */
+.historico-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #a89070;
+    margin-bottom: 12px;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Colapsado: esconde lista e botão limpar em qualquer tela */
+.historico-painel.colapsado .historico-lista,
+.historico-painel.colapsado .historico-limpar {
+    display: none;
+}
+
+/* Seta vira para cima quando expandido */
+.historico-painel:not(.colapsado) .historico-seta {
+    transform: rotate(180deg);
+}
+
 .historico-titulo {
     font-family: "Space Grotesk", sans-serif;
     font-weight: 300;
     color: #3d1f0a;
     font-size: 14px;
     text-align: center;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #a89070;
+    margin: 0;
 }
 
-/* Lista de entradas: cresce para ocupar o espaço disponível,
-   com rolagem vertical quando há muitas entradas.
-   min-height: 0 é essencial para que flex: 1 respeite o max-height do pai. */
+/* Seta indicadora de estado — visível em todos os tamanhos */
+.historico-seta {
+    font-size: 11px;
+    color: #6b4a30;
+    transition: transform 0.25s;
+    display: inline;
+}
+
+/* Lista de entradas: mostra no máximo 6 itens (~300px), scroll para o resto.
+   min-height: 0 e max-height fixo garantem que o painel nunca cresce além disso. */
+/* Lista de entradas: altura mínima fixa para que a animação do painel
+   sempre vá até o final, independente de quantos itens existem. */
 .historico-lista {
     list-style: none;
-    overflow-y: auto;
+    overflow-y: hidden;
     flex: 1;
-    min-height: 0;
+    min-height: 350px;
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -404,11 +452,31 @@ body {
         align-items: center;
     }
 
-    /* Caderninho ocupa a mesma largura da calculadora */
+    /* Caderninho no mobile: largura total, max-height para animar */
     .historico-painel {
         width: 320px;
         align-self: auto;
-        padding-left: 28px;
-        max-height: 400px;
+        padding-left: 32px;
+        max-height: 325px;
+    }
+
+    .historico-painel.colapsado {
+        max-height: 54px;
+    }
+
+    /* Mobile: lista com min-height para 4 itens */
+    .historico-lista {
+        min-height: 200px;
+    }
+
+    /* Mobile: header clicável — no desktop já está global */
+    .historico-header {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    /* Seta aparece no mobile — no desktop já está global */
+    .historico-seta {
+        display: inline;
     }
 }
