@@ -365,44 +365,8 @@ botaoLimparHistorico.addEventListener("click", function () {
     renderizarHistorico();
 });
 
-// ===================================================================
-// Espirais decorativas do caderninho
-// ===================================================================
-
-/**
- * Gera círculos decorativos (espirais) ao longo da borda esquerda do painel.
- * Os elementos existentes são removidos antes de recriar, para evitar duplicatas.
- * Usa número fixo de 20 espirais para cobrir qualquer altura razoável do painel.
- */
-function gerarEspirais() {
-    let painel = document.getElementById("historico-painel");
-
-    // Remove espirais anteriores (para evitar duplicatas ao redimensionar)
-    let espiraisAnteriores = painel.querySelectorAll(".espiral");
-    espiraisAnteriores.forEach(function (el) {
-        el.remove();
-    });
-
-    // Cria 20 espirais posicionadas de 30 em 30px a partir do topo
-    let totalEspirais = 20;
-    for (let i = 0; i < totalEspirais; i++) {
-        let espiral = document.createElement("div");
-        espiral.className = "espiral";
-        espiral.style.top = (16 + i * 30) + "px";
-        painel.appendChild(espiral);
-    }
-}
-
-// Debounce para o redimensionamento: evita re-geração excessiva ao redimensionar
-let debounceEspirais;
-window.addEventListener("resize", function () {
-    clearTimeout(debounceEspirais);
-    debounceEspirais = setTimeout(gerarEspirais, 150);
-});
-
-// O script está ao final do <body>, portanto o DOM já está pronto.
-// Gera as espirais imediatamente ao executar o script.
-gerarEspirais();
+// As espirais decorativas do caderninho agora são geradas via CSS (radial-gradient),
+// eliminando a necessidade de manipulação do DOM via JavaScript.
 
 // Estado inicial: nenhum resultado nem previsão visível (equivalente ao estado após AC).
 // Garante que o controle por opacity esteja correto desde o carregamento da página.
