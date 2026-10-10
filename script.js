@@ -95,24 +95,40 @@ botoes.forEach(botao => {
 
 /**
  * Exibe o texto de previsão e garante que o resultado fique invisível.
- * Passando string vazia limpa a previsão sem alterar o resultado.
+ * Usa opacity para controlar a visibilidade — o texto permanece no elemento,
+ * evitando mudanças de layout enquanto o bloco .area_resultado tem altura fixa.
+ * Passando string vazia (ou null) oculta a previsão sem alterar o resultado.
  */
 function mostrarPrevisao(texto) {
-    elementoPrevisao.textContent = texto;
-    // Quando há previsão ativa, o resultado anterior some
-    if (texto !== "") {
-        elementoResultado.textContent = "";
+    if (texto !== "" && texto != null) {
+        // Previsão ativa: mostra com opacidade reduzida (discreta), esconde resultado
+        elementoPrevisao.textContent = texto;
+        elementoPrevisao.style.opacity = '0.55';
+        elementoResultado.style.opacity = '0';
+    } else {
+        // Previsão vazia: oculta via opacity (mantém o espaço no DOM)
+        elementoPrevisao.style.opacity = '0';
+        elementoResultado.style.opacity = '0';
     }
 }
 
 /**
  * Exibe o resultado definitivo e garante que a previsão fique invisível.
- * Passando string vazia limpa o resultado (ex: após AC).
+ * Usa opacity para controlar a visibilidade — o texto permanece no elemento,
+ * evitando mudanças de layout enquanto o bloco .area_resultado tem altura fixa.
+ * Passando string vazia (ou null) oculta ambos — usado após AC.
  */
 function mostrarResultado(texto) {
-    elementoResultado.textContent = texto;
-    // Resultado visível → previsão some
-    elementoPrevisao.textContent = "";
+    if (texto !== "" && texto != null) {
+        // Resultado definitivo: opacidade total, previsão some
+        elementoResultado.textContent = texto;
+        elementoResultado.style.opacity = '1';
+        elementoPrevisao.style.opacity = '0';
+    } else {
+        // Resultado vazio (após AC): oculta ambos via opacity
+        elementoResultado.style.opacity = '0';
+        elementoPrevisao.style.opacity = '0';
+    }
 }
 
 // ===================================================================
@@ -387,3 +403,8 @@ window.addEventListener("resize", function () {
 // O script está ao final do <body>, portanto o DOM já está pronto.
 // Gera as espirais imediatamente ao executar o script.
 gerarEspirais();
+
+// Estado inicial: nenhum resultado nem previsão visível (equivalente ao estado após AC).
+// Garante que o controle por opacity esteja correto desde o carregamento da página.
+elementoPrevisao.style.opacity = '0';
+elementoResultado.style.opacity = '0';

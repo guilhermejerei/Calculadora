@@ -13,45 +13,57 @@
 </head>
 
 <body>
-    <div class="calculadora">
-        <!-- Área de resultado: exibe a previsão e o resultado definitivo -->
-        <div class="area_resultado">
-            <p id="previsao" class="previsao" aria-live="polite" aria-label="Previsão do resultado"></p>
-            <p id="resultado"></p>
+    <!-- Wrapper que posiciona calculadora e caderninho lado a lado -->
+    <div class="app-wrapper">
+        <div class="calculadora">
+            <!-- Área de resultado: altura fixa, previsão e resultado nunca crescem o bloco -->
+            <div class="area_resultado">
+                <p id="previsao" class="previsao" aria-live="polite" aria-label="Previsão do resultado"></p>
+                <p id="resultado"></p>
+            </div>
+            <!-- Campo de entrada do usuário -->
+            <div class="area_entrada">
+                <input id="entrada" type="text" readonly aria-label="Expressão matemática" aria-live="polite">
+            </div>
+            <div class="interface">
+                <!-- Operadores aritméticos -->
+                <button class="btn-operador" data-valor="+" aria-label="Adicionar">+</button>
+                <button class="btn-operador" data-valor="-" aria-label="Subtrair">-</button>
+                <button class="btn-operador" data-valor="*" aria-label="Multiplicar">x</button>
+                <button class="btn-operador" data-valor="/" aria-label="Dividir">/</button>
+
+                <button data-valor="1" aria-label="Número 1">1</button>
+                <button data-valor="2" aria-label="Número 2">2</button>
+                <button data-valor="3" aria-label="Número 3">3</button>
+                <!-- Porcentagem tratada como operador -->
+                <button class="btn-operador" data-valor="%" aria-label="Porcentagem">%</button>
+
+                <button data-valor="4" aria-label="Número 4">4</button>
+                <button data-valor="5" aria-label="Número 5">5</button>
+                <button data-valor="6" aria-label="Número 6">6</button>
+                <!-- DEL: remoção do último caractere -->
+                <button class="btn-del" data-acao="backspace" aria-label="Apagar último caractere">DEL</button>
+
+                <button data-valor="7" aria-label="Número 7">7</button>
+                <button data-valor="8" aria-label="Número 8">8</button>
+                <button data-valor="9" aria-label="Número 9">9</button>
+                <!-- AC: limpar tudo -->
+                <button class="btn-ac" data-acao="clear" aria-label="Limpar tudo">AC</button>
+
+                <button data-valor="0" aria-label="Número 0">0</button>
+                <button data-valor="." aria-label="Ponto decimal">•</button>
+                <!-- Igual: ação principal -->
+                <button class="btn-igual enter" data-acao="calcular" aria-label="Calcular resultado">=</button>
+            </div>
         </div>
-        <!-- Campo de entrada do usuário -->
-        <div class="area_entrada">
-            <input id="entrada" type="text" readonly aria-label="Expressão matemática" aria-live="polite">
-        </div>
-        <div class="interface">
-            <!-- Operadores aritméticos -->
-            <button class="btn-operador" data-valor="+" aria-label="Adicionar">+</button>
-            <button class="btn-operador" data-valor="-" aria-label="Subtrair">-</button>
-            <button class="btn-operador" data-valor="*" aria-label="Multiplicar">x</button>
-            <button class="btn-operador" data-valor="/" aria-label="Dividir">/</button>
 
-            <button data-valor="1" aria-label="Número 1">1</button>
-            <button data-valor="2" aria-label="Número 2">2</button>
-            <button data-valor="3" aria-label="Número 3">3</button>
-            <!-- Porcentagem tratada como operador -->
-            <button class="btn-operador" data-valor="%" aria-label="Porcentagem">%</button>
-
-            <button data-valor="4" aria-label="Número 4">4</button>
-            <button data-valor="5" aria-label="Número 5">5</button>
-            <button data-valor="6" aria-label="Número 6">6</button>
-            <!-- DEL: remoção -->
-            <button class="btn-del" data-acao="backspace" aria-label="Apagar último caractere">DEL</button>
-
-            <button data-valor="7" aria-label="Número 7">7</button>
-            <button data-valor="8" aria-label="Número 8">8</button>
-            <button data-valor="9" aria-label="Número 9">9</button>
-            <!-- AC: limpar tudo -->
-            <button class="btn-ac" data-acao="clear" aria-label="Limpar tudo">AC</button>
-
-            <button data-valor="0" aria-label="Número 0">0</button>
-            <button data-valor="." aria-label="Ponto decimal">•</button>
-            <!-- Igual: ação principal -->
-            <button class="btn-igual enter" data-acao="calcular" aria-label="Calcular resultado">=</button>
+        <!-- Painel de histórico estilo caderninho -->
+        <div class="historico-painel" id="historico-painel">
+            <h2 class="historico-titulo">Histórico</h2>
+            <ul class="historico-lista" id="historico-lista">
+                <li class="historico-vazio">Sem cálculos ainda</li>
+            </ul>
+            <button class="historico-limpar" id="historico-limpar">Limpar</button>
         </div>
     </div>
 

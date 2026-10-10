@@ -92,7 +92,8 @@ body {
 
 /* === Resultado definitivo ===
    Posição absoluta centralizada verticalmente no bloco.
-   Ocultado (opacity 0) enquanto o usuário digita. */
+   Ocultado (opacity 0) enquanto o usuário digita.
+   Opacity gerenciada pelo JavaScript — começa em 0 (sem resultado). */
 #resultado {
     position: absolute;
     bottom: 8px;
@@ -101,7 +102,7 @@ body {
     font-size: 26px;
     font-weight: bold;
     color: #D99B77;
-    opacity: 1;
+    opacity: 0;
     line-height: 1.2;
     padding: 0 8px;
     transition: opacity 0.15s;
