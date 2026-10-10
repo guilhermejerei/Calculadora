@@ -1,10 +1,17 @@
-// Referências aos elementos do DOM
+// === Referências aos elementos do DOM ===
 let campoEntrada = document.getElementById("entrada");
 let elementoResultado = document.getElementById("resultado");
 let elementoPrevisao = document.getElementById("previsao");
 let botoes = document.querySelectorAll(".interface button");
 
-// Carregamento dos arquivos de áudio
+// Referências ao painel de histórico
+let listaHistorico = document.getElementById("historico-lista");
+let botaoLimparHistorico = document.getElementById("historico-limpar");
+
+// Array interno de entradas do histórico: cada item é { expressao, resultado }
+let entradasHistorico = [];
+
+// === Carregamento dos arquivos de áudio ===
 const audio_botao = new Audio('sounds/tap.mp3');
 const audio_botao2 = new Audio('sounds/equal.mp3');
 
@@ -24,7 +31,7 @@ document.addEventListener("keydown", function (event) {
 // Conjunto de caracteres considerados operadores válidos
 const operadoresValidos = "+-*/%";
 
-// Registro de cliques em cada botão da interface
+// === Registro de cliques em cada botão da interface ===
 botoes.forEach(botao => {
     botao.addEventListener("click", function () {
         let valor = botao.dataset.valor;
@@ -45,7 +52,6 @@ botoes.forEach(botao => {
 
             // Impede ponto decimal duplicado no mesmo segmento numérico
             if (valor === ".") {
-                // Extrai o último segmento numérico após o último operador
                 let segmentos = campoEntrada.value.split(/[+\-*\/%]/);
                 let ultimoSegmento = segmentos[segmentos.length - 1];
                 if (ultimoSegmento.includes(".")) {
@@ -68,8 +74,8 @@ botoes.forEach(botao => {
         // Limpa todo o campo, o resultado e a previsão
         if (acao === "clear") {
             campoEntrada.value = "";
-            elementoResultado.textContent = "";
-            elementoPrevisao.textContent = "";
+            mostrarResultado("");
+            mostrarPrevisao("");
             tocar_audio(audio_botao);
         }
 
@@ -81,7 +87,37 @@ botoes.forEach(botao => {
     });
 });
 
-// Mapeamento de operadores para suas funções aritméticas correspondentes
+// ===================================================================
+// Funções auxiliares de exibição
+// Controlam qual dos dois elementos (previsão ou resultado) está visível.
+// Nunca ambos ao mesmo tempo — o bloco .area_resultado tem altura fixa.
+// ===================================================================
+
+/**
+ * Exibe o texto de previsão e garante que o resultado fique invisível.
+ * Passando string vazia limpa a previsão sem alterar o resultado.
+ */
+function mostrarPrevisao(texto) {
+    elementoPrevisao.textContent = texto;
+    // Quando há previsão ativa, o resultado anterior some
+    if (texto !== "") {
+        elementoResultado.textContent = "";
+    }
+}
+
+/**
+ * Exibe o resultado definitivo e garante que a previsão fique invisível.
+ * Passando string vazia limpa o resultado (ex: após AC).
+ */
+function mostrarResultado(texto) {
+    elementoResultado.textContent = texto;
+    // Resultado visível → previsão some
+    elementoPrevisao.textContent = "";
+}
+
+// ===================================================================
+// Mapeamento de operadores para suas funções aritméticas
+// ===================================================================
 const operacoes = {
     "+": (a, b) => a + b,
     "-": (a, b) => a - b,
@@ -93,7 +129,8 @@ const operacoes = {
 /**
  * Núcleo do cálculo — recebe uma string de expressão já validada e
  * retorna o valor numérico ou null em caso de resultado inválido/infinito.
- * Usada tanto pelo botão = quanto pela previsão de resultado.
+ * Usada tanto pelo botão = quanto pela previsão de resultado,
+ * garantindo que os dois nunca divirjam.
  */
 function avaliarExpressao(texto) {
     if (!texto || texto === "-") return null;
@@ -134,14 +171,33 @@ function avaliarExpressao(texto) {
     return resultadoFinal;
 }
 
-// Executa o cálculo da expressão no campo de entrada (botão =)
+/**
+ * Formata um número evitando artefatos de ponto flutuante (ex: 0.1+0.2 → 0.3)
+ * e usando notação científica para valores muito grandes.
+ */
+function formatarNumero(valor) {
+    if (String(Number(valor)).length >= 12) {
+        return valor.toExponential(8);
+    }
+    return parseFloat(valor.toFixed(10)).toString();
+}
+
+// ===================================================================
+// Cálculo definitivo (botão =)
+// ===================================================================
+
+/**
+ * Executa o cálculo da expressão no campo de entrada.
+ * Após o resultado, limpa a previsão e adiciona a entrada ao histórico.
+ */
 function calcular() {
-    let texto = campoEntrada.value;
+    let textoOriginal = campoEntrada.value;
 
     // Ignora se o campo estiver vazio
-    if (!texto) return;
+    if (!textoOriginal) return;
 
     // Remove operador no final da expressão antes de calcular
+    let texto = textoOriginal;
     if (operadoresValidos.includes(texto.slice(-1))) {
         texto = texto.slice(0, -1);
     }
@@ -150,65 +206,58 @@ function calcular() {
 
     // Tratamento de resultado inválido (null cobre NaN e divisão por zero)
     if (resultadoFinal === null) {
-        // Distingue divisão por zero de expressão inválida para manter comportamento anterior
-        if (texto && !isNaN(Number(texto.split(/[+\-*\/%]/).pop())) ) {
-            // Tenta detectar divisão por zero recalculando com verificação pontual
-            let tempOps = [];
-            for (let c of texto) {
-                if (operadoresValidos.includes(c)) tempOps.push(c);
-            }
-            let tempNums = texto.split(/[+\-*\/%]/).map(Number);
-            let divPorZero = false;
-            for (let i = 0; i < tempOps.length; i++) {
-                if ((tempOps[i] === "/" || tempOps[i] === "%") && tempNums[i + 1] === 0) {
-                    divPorZero = true;
-                    break;
-                }
-            }
-            elementoResultado.textContent = divPorZero ? "Erro: div/0" : "inválido";
-        } else {
-            elementoResultado.textContent = "inválido";
+        // Detecta divisão por zero para mensagem específica
+        let tempOps = [];
+        for (let c of texto) {
+            if (operadoresValidos.includes(c)) tempOps.push(c);
         }
-        // Limpa a previsão ao mostrar erro
-        elementoPrevisao.textContent = "";
+        let tempNums = texto.split(/[+\-*\/%]/).map(Number);
+        let divPorZero = false;
+        for (let i = 0; i < tempOps.length; i++) {
+            if ((tempOps[i] === "/" || tempOps[i] === "%") && tempNums[i + 1] === 0) {
+                divPorZero = true;
+                break;
+            }
+        }
+        mostrarResultado(divPorZero ? "Erro: div/0" : "inválido");
+        // Erros não são adicionados ao histórico
         return;
     }
 
-    // Formata o resultado: notação científica para números muito grandes
-    let resultadoFormatado;
-    if (String(Number(resultadoFinal)).length >= 12) {
-        resultadoFormatado = resultadoFinal.toExponential(8);
-    } else {
-        // Arredonda para evitar artefatos de ponto flutuante (ex: 0.1+0.2 → 0.3)
-        resultadoFormatado = parseFloat(resultadoFinal.toFixed(10)).toString();
-    }
+    let resultadoFormatado = formatarNumero(resultadoFinal);
 
-    elementoResultado.textContent = resultadoFormatado;
-    // Limpa a previsão quando o resultado definitivo é exibido
-    elementoPrevisao.textContent = "";
+    // Exibe o resultado e oculta a previsão (mostrarResultado faz isso atomicamente)
+    mostrarResultado(resultadoFormatado);
+
+    // Adiciona ao histórico apenas resultados válidos
+    adicionarHistorico(textoOriginal, resultadoFormatado);
 }
+
+// ===================================================================
+// Previsão de resultado (atualizada a cada tecla)
+// ===================================================================
 
 /**
  * Atualiza a previsão de resultado a cada modificação do campo de entrada.
  * Reutiliza avaliarExpressao() para garantir consistência com o resultado final.
  * Regras:
  *   - expressão vazia → previsão vazia
- *   - expressão terminando com operador → remove o operador e calcula o restante
+ *   - expressão terminando com operador → avalia a parte completa (ex: 6+ → mostra 6)
  *   - expressão inválida ou divisão por zero → previsão vazia (nunca exibe erro)
- *   - resultado válido → exibe o valor formatado (sem artefatos de ponto flutuante)
+ *   - resultado válido → exibe o valor formatado sem artefatos de ponto flutuante
  */
 function atualizarPrevisao() {
     let texto = campoEntrada.value;
 
-    // Expressão vazia: limpa a previsão
+    // Expressão vazia: limpa previsão e resultado
     if (!texto) {
-        elementoPrevisao.textContent = "";
+        mostrarPrevisao("");
         return;
     }
 
-    // Se começa com um operador (que não seja sinal negativo inicial), previsão vazia
+    // Se começa com operador que não seja sinal negativo, previsão vazia
     if (operadoresValidos.includes(texto[0]) && texto[0] !== "-") {
-        elementoPrevisao.textContent = "";
+        mostrarPrevisao("");
         return;
     }
 
@@ -218,9 +267,9 @@ function atualizarPrevisao() {
         textoAvaliado = textoAvaliado.slice(0, -1);
     }
 
-    // Se após a remoção o texto ficou vazio ou é apenas "-", previsão vazia
+    // Após remoção, se ficou vazio ou só "-", previsão vazia
     if (!textoAvaliado || textoAvaliado === "-") {
-        elementoPrevisao.textContent = "";
+        mostrarPrevisao("");
         return;
     }
 
@@ -228,17 +277,113 @@ function atualizarPrevisao() {
 
     // Resultado inválido (inclui divisão por zero): previsão vazia
     if (valor === null) {
-        elementoPrevisao.textContent = "";
+        mostrarPrevisao("");
         return;
     }
 
-    // Arredonda para evitar artefatos de ponto flutuante (ex: 0.1+0.2 → 0.3)
-    let formatado = parseFloat(valor.toFixed(10)).toString();
+    mostrarPrevisao(formatarNumero(valor));
+}
 
-    // Para números muito grandes, usa notação científica (consistente com calcular())
-    if (String(Number(valor)).length >= 12) {
-        formatado = valor.toExponential(8);
+// ===================================================================
+// Histórico de cálculos
+// ===================================================================
+
+/**
+ * Renderiza a lista de histórico no painel caderninho.
+ * Se o array estiver vazio, mostra a mensagem de estado vazio.
+ * Cada item é clicável e copia o resultado para o campo de entrada.
+ */
+function renderizarHistorico() {
+    listaHistorico.innerHTML = "";
+
+    if (entradasHistorico.length === 0) {
+        let itemVazio = document.createElement("li");
+        itemVazio.className = "historico-vazio";
+        itemVazio.textContent = "Sem cálculos ainda";
+        listaHistorico.appendChild(itemVazio);
+        return;
     }
 
-    elementoPrevisao.textContent = formatado;
+    entradasHistorico.forEach(function (entrada) {
+        let item = document.createElement("li");
+        item.className = "historico-item";
+
+        let spanExpressao = document.createElement("span");
+        spanExpressao.className = "hist-expressao";
+        spanExpressao.textContent = entrada.expressao;
+
+        let spanResultado = document.createElement("span");
+        spanResultado.className = "hist-resultado";
+        spanResultado.textContent = entrada.resultado;
+
+        item.appendChild(spanExpressao);
+        item.appendChild(spanResultado);
+
+        // Clique copia o resultado (apenas o número) para o campo de entrada
+        item.addEventListener("click", function () {
+            campoEntrada.value = entrada.resultado.trim();
+            atualizarPrevisao();
+        });
+
+        listaHistorico.appendChild(item);
+    });
 }
+
+/**
+ * Adiciona uma nova entrada ao histórico e re-renderiza.
+ * Mantém no máximo 10 entradas (remove a mais antiga quando excede).
+ */
+function adicionarHistorico(expressao, resultado) {
+    entradasHistorico.unshift({ expressao: expressao, resultado: resultado });
+
+    if (entradasHistorico.length > 10) {
+        entradasHistorico.pop();
+    }
+
+    renderizarHistorico();
+}
+
+// Botão Limpar: esvazia o array e re-renderiza
+botaoLimparHistorico.addEventListener("click", function () {
+    entradasHistorico = [];
+    renderizarHistorico();
+});
+
+// ===================================================================
+// Espirais decorativas do caderninho
+// ===================================================================
+
+/**
+ * Gera círculos decorativos (espirais) ao longo da borda esquerda do painel.
+ * Os elementos existentes são removidos antes de recriar, para evitar duplicatas.
+ * Usa número fixo de 20 espirais para cobrir qualquer altura razoável do painel.
+ */
+function gerarEspirais() {
+    let painel = document.getElementById("historico-painel");
+
+    // Remove espirais anteriores (para evitar duplicatas ao redimensionar)
+    let espiraisAnteriores = painel.querySelectorAll(".espiral");
+    espiraisAnteriores.forEach(function (el) {
+        el.remove();
+    });
+
+    // Cria 20 espirais posicionadas de 30 em 30px a partir do topo
+    let totalEspirais = 20;
+    for (let i = 0; i < totalEspirais; i++) {
+        let espiral = document.createElement("div");
+        espiral.className = "espiral";
+        espiral.style.top = (16 + i * 30) + "px";
+        painel.appendChild(espiral);
+    }
+}
+
+// Debounce para o redimensionamento: evita re-geração excessiva ao redimensionar
+let debounceEspirais;
+window.addEventListener("resize", function () {
+    clearTimeout(debounceEspirais);
+    debounceEspirais = setTimeout(gerarEspirais, 150);
+});
+
+// O script está ao final do <body>, portanto o DOM já está pronto.
+// Gera as espirais imediatamente ao executar o script.
+gerarEspirais();
