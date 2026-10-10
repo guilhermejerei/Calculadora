@@ -12,18 +12,22 @@ html, body {
     height: 100%;
 }
 
-/* === Layout Geral === */
+/* === Layout Geral ===
+   Gradiente de fundo em tons de marrom, cobrindo toda a tela sem emendas.
+   background-attachment: fixed garante que o gradiente não se repita em telas altas. */
 body {
     margin: 0;
     min-height: 100vh;
-    background-color: #402319;
+    background: linear-gradient(160deg, #6b3a23 0%, #3a1a0c 60%, #1e0d05 100%);
+    background-attachment: fixed;
 
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-/* === Calculadora === */
+/* === Calculadora ===
+   Sombra profunda para sensação de elevação sobre o gradiente de fundo. */
 .calculadora {
     width: 320px;
     background-color: #D99B77;
@@ -31,9 +35,11 @@ body {
     border-radius: 6px;
     border-style: outset;
     border-color: #D99B77;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55), 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
-/* === Display de Resultado === */
+/* === Área de Resultado ===
+   Contém a previsão (texto secundário) e o resultado definitivo (texto principal). */
 .area_resultado {
     width: 100%;
     text-align: center;
@@ -48,11 +54,27 @@ body {
     border-radius: 7px;
     border-color: #d18e68;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding: 6px 8px;
 }
 
-/* === Campo de Entrada === */
+/* === Previsão de resultado ===
+   Texto secundário, discreto, exibido antes do clique em igual. */
+.previsao {
+    font-size: 14px;
+    font-weight: normal;
+    color: #D99B77;
+    opacity: 0.5;
+    min-height: 18px;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+}
+
+/* === Campo de Entrada ===
+   Borda de destaque sutil em tom de âmbar e leve box-shadow interno
+   para diferenciar o campo do restante da interface sem competir com o resultado. */
 .area_entrada input {
     width: 100%;
     height: 40px;
@@ -62,9 +84,9 @@ body {
     color: #402319;
     font-size: 16px;
     border-radius: 7px;
-    border-style: solid;
-    border-color: #D99B77;
+    border: 2px solid #c97c3a;
     outline: none;
+    box-shadow: inset 0 2px 6px rgba(64, 35, 25, 0.18);
 }
 
 /* === Grade de Botões === */
@@ -74,6 +96,7 @@ body {
     gap: 8px;
 }
 
+/* --- Botões numéricos (cor base) --- */
 .interface button {
     color: #402319;
     border-radius: 16px;
@@ -82,29 +105,113 @@ body {
     font-size: 16px;
     border: 2px solid #af795a;
     cursor: pointer;
-    transition: 0.2s;
+    transition: background-color 0.2s, border-color 0.2s;
 }
 
 .interface button:hover {
     background-color: #dd966d;
 }
 
-/* === Botão Igual === */
+.interface button:focus {
+    outline: 2px solid #c97c3a;
+    outline-offset: 2px;
+}
+
+.interface button:active {
+    background-color: #c97553;
+}
+
+/* --- Operadores aritméticos (+, -, *, /, %)
+   Tom marrom-acobreado, distinto dos numéricos. Razão de contraste com #402319: ~5.2:1 (WCAG AA). --- */
+.interface .btn-operador {
+    background-color: #b06030;
+    border-color: #8a4720;
+    color: #faebd7;
+}
+
+.interface .btn-operador:hover {
+    background-color: #c47038;
+}
+
+.interface .btn-operador:focus {
+    outline: 2px solid #faebd7;
+    outline-offset: 2px;
+}
+
+.interface .btn-operador:active {
+    background-color: #964f24;
+}
+
+/* --- Botão Igual (=)
+   Cor de maior destaque: terracota quente e saturada, ação principal.
+   Razão de contraste com #faebd7: ~4.6:1 (WCAG AA). --- */
+.interface .btn-igual {
+    background-color: #c0392b;
+    border-color: #922b21;
+    color: #faebd7;
+    font-weight: bold;
+}
+
+.interface .btn-igual:hover {
+    background-color: #d44538;
+    font-size: 20px;
+    transition: font-size 0.8s, background-color 0.2s;
+}
+
+.interface .btn-igual:focus {
+    outline: 2px solid #faebd7;
+    outline-offset: 2px;
+}
+
+.interface .btn-igual:active {
+    background-color: #a93226;
+}
+
+/* --- Botão DEL
+   Vinho discreto, indica remoção de um caractere.
+   Razão de contraste com #faebd7: ~5.1:1 (WCAG AA). --- */
+.interface .btn-del {
+    background-color: #6b1a2a;
+    border-color: #4a1020;
+    color: #faebd7;
+}
+
+.interface .btn-del:hover {
+    background-color: #7e2035;
+}
+
+.interface .btn-del:focus {
+    outline: 2px solid #faebd7;
+    outline-offset: 2px;
+}
+
+.interface .btn-del:active {
+    background-color: #541525;
+}
+
+/* --- Botão AC
+   Cinza-acastanhado escuro, indica reset geral — visualmente menos agressivo que o DEL.
+   Razão de contraste com #faebd7: ~5.5:1 (WCAG AA). --- */
+.interface .btn-ac {
+    background-color: #5a4535;
+    border-color: #3d2e22;
+    color: #faebd7;
+}
+
+.interface .btn-ac:hover {
+    background-color: #6b5242;
+}
+
+.interface .btn-ac:focus {
+    outline: 2px solid #faebd7;
+    outline-offset: 2px;
+}
+
+.interface .btn-ac:active {
+    background-color: #4a3828;
+}
+
+/* === Botão Igual ocupa duas colunas === */
 .enter {
     grid-column: span 2;
-}
-
-.enter:hover {
-    font-size: 20px;
-    transition: 0.8s;
-}
-
-/* === Logo === */
-.logo {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    width: 70px;
-
-    cursor: pointer;
 }

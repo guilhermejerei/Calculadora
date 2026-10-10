@@ -1,6 +1,7 @@
 // Referências aos elementos do DOM
 let campoEntrada = document.getElementById("entrada");
 let elementoResultado = document.getElementById("resultado");
+let elementoPrevisao = document.getElementById("previsao");
 let botoes = document.querySelectorAll(".interface button");
 
 // Carregamento dos arquivos de áudio
@@ -54,22 +55,25 @@ botoes.forEach(botao => {
 
             campoEntrada.value += valor;
             tocar_audio(audio_botao);
+            atualizarPrevisao();
         }
 
         // Apaga o último caractere
         if (acao === "backspace") {
             campoEntrada.value = campoEntrada.value.slice(0, -1);
             tocar_audio(audio_botao);
+            atualizarPrevisao();
         }
 
-        // Limpa todo o campo e o resultado
+        // Limpa todo o campo, o resultado e a previsão
         if (acao === "clear") {
             campoEntrada.value = "";
             elementoResultado.textContent = "";
+            elementoPrevisao.textContent = "";
             tocar_audio(audio_botao);
         }
 
-        // Executa o cálculo
+        // Executa o cálculo definitivo
         if (acao === "calcular") {
             calcular();
             tocar_audio(audio_botao2);
@@ -86,20 +90,13 @@ const operacoes = {
     "%": (a, b) => a * b / 100,
 };
 
-// Executa o cálculo da expressão no campo de entrada
-function calcular() {
-    let texto = campoEntrada.value;
-
-    // Ignora se o campo estiver vazio
-    if (!texto) return;
-
-    // Remove operador no final da expressão antes de calcular
-    if (operadoresValidos.includes(texto.slice(-1))) {
-        texto = texto.slice(0, -1);
-    }
-
-    // Ignora se restar apenas o sinal de menos (sem número)
-    if (!texto || texto === "-") return;
+/**
+ * Núcleo do cálculo — recebe uma string de expressão já validada e
+ * retorna o valor numérico ou null em caso de resultado inválido/infinito.
+ * Usada tanto pelo botão = quanto pela previsão de resultado.
+ */
+function avaliarExpressao(texto) {
+    if (!texto || texto === "-") return null;
 
     // Coleta todos os operadores presentes na expressão
     let operadores = [];
@@ -112,6 +109,9 @@ function calcular() {
 
     // Divide a expressão nos operadores para obter os operandos
     let numeros = texto.split(/[+\-*\/%]/).map(Number);
+
+    // Verifica se algum operando não é um número válido
+    if (numeros.some(isNaN)) return null;
 
     // Aplica multiplicação, divisão e porcentagem primeiro (precedência)
     for (let i = 0; i < operadores.length; i++) {
@@ -129,15 +129,48 @@ function calcular() {
         resultadoFinal = operacoes[operadores[i]](resultadoFinal, numeros[i + 1]);
     }
 
-    // Tratamento de resultado inválido (NaN)
-    if (isNaN(resultadoFinal)) {
-        elementoResultado.textContent = "inválido";
-        return;
+    if (isNaN(resultadoFinal) || !isFinite(resultadoFinal)) return null;
+
+    return resultadoFinal;
+}
+
+// Executa o cálculo da expressão no campo de entrada (botão =)
+function calcular() {
+    let texto = campoEntrada.value;
+
+    // Ignora se o campo estiver vazio
+    if (!texto) return;
+
+    // Remove operador no final da expressão antes de calcular
+    if (operadoresValidos.includes(texto.slice(-1))) {
+        texto = texto.slice(0, -1);
     }
 
-    // Tratamento de divisão por zero
-    if (!isFinite(resultadoFinal)) {
-        elementoResultado.textContent = "Erro: div/0";
+    let resultadoFinal = avaliarExpressao(texto);
+
+    // Tratamento de resultado inválido (null cobre NaN e divisão por zero)
+    if (resultadoFinal === null) {
+        // Distingue divisão por zero de expressão inválida para manter comportamento anterior
+        if (texto && !isNaN(Number(texto.split(/[+\-*\/%]/).pop())) ) {
+            // Tenta detectar divisão por zero recalculando com verificação pontual
+            let tempOps = [];
+            for (let c of texto) {
+                if (operadoresValidos.includes(c)) tempOps.push(c);
+            }
+            let tempNums = texto.split(/[+\-*\/%]/).map(Number);
+            let divPorZero = false;
+            for (let i = 0; i < tempOps.length; i++) {
+                if ((tempOps[i] === "/" || tempOps[i] === "%") && tempNums[i + 1] === 0) {
+                    divPorZero = true;
+                    break;
+                }
+            }
+            elementoResultado.textContent = divPorZero ? "Erro: div/0" : "inválido";
+        } else {
+            elementoResultado.textContent = "inválido";
+        }
+        // Limpa a previsão ao mostrar erro
+        elementoPrevisao.textContent = "";
         return;
     }
 
@@ -146,8 +179,66 @@ function calcular() {
     if (String(Number(resultadoFinal)).length >= 12) {
         resultadoFormatado = resultadoFinal.toExponential(8);
     } else {
-        resultadoFormatado = resultadoFinal.toString();
+        // Arredonda para evitar artefatos de ponto flutuante (ex: 0.1+0.2 → 0.3)
+        resultadoFormatado = parseFloat(resultadoFinal.toFixed(10)).toString();
     }
 
     elementoResultado.textContent = resultadoFormatado;
+    // Limpa a previsão quando o resultado definitivo é exibido
+    elementoPrevisao.textContent = "";
+}
+
+/**
+ * Atualiza a previsão de resultado a cada modificação do campo de entrada.
+ * Reutiliza avaliarExpressao() para garantir consistência com o resultado final.
+ * Regras:
+ *   - expressão vazia → previsão vazia
+ *   - expressão terminando com operador → remove o operador e calcula o restante
+ *   - expressão inválida ou divisão por zero → previsão vazia (nunca exibe erro)
+ *   - resultado válido → exibe o valor formatado (sem artefatos de ponto flutuante)
+ */
+function atualizarPrevisao() {
+    let texto = campoEntrada.value;
+
+    // Expressão vazia: limpa a previsão
+    if (!texto) {
+        elementoPrevisao.textContent = "";
+        return;
+    }
+
+    // Se começa com um operador (que não seja sinal negativo inicial), previsão vazia
+    if (operadoresValidos.includes(texto[0]) && texto[0] !== "-") {
+        elementoPrevisao.textContent = "";
+        return;
+    }
+
+    // Remove operador pendente no final antes de avaliar
+    let textoAvaliado = texto;
+    if (operadoresValidos.includes(textoAvaliado.slice(-1))) {
+        textoAvaliado = textoAvaliado.slice(0, -1);
+    }
+
+    // Se após a remoção o texto ficou vazio ou é apenas "-", previsão vazia
+    if (!textoAvaliado || textoAvaliado === "-") {
+        elementoPrevisao.textContent = "";
+        return;
+    }
+
+    let valor = avaliarExpressao(textoAvaliado);
+
+    // Resultado inválido (inclui divisão por zero): previsão vazia
+    if (valor === null) {
+        elementoPrevisao.textContent = "";
+        return;
+    }
+
+    // Arredonda para evitar artefatos de ponto flutuante (ex: 0.1+0.2 → 0.3)
+    let formatado = parseFloat(valor.toFixed(10)).toString();
+
+    // Para números muito grandes, usa notação científica (consistente com calcular())
+    if (String(Number(valor)).length >= 12) {
+        formatado = valor.toExponential(8);
+    }
+
+    elementoPrevisao.textContent = formatado;
 }
