@@ -32,7 +32,7 @@ Calculadora web com design em tons de café e marrom, desenvolvida com HTML, CSS
 Clone o repositório e abra o `index.html` diretamente no navegador — nenhum servidor necessário.
 
 ```bash
-git clone https://github.com/guilhermejerei/Calculator-JS.git
+git clone https://github.com/guilhermejerei/Calculadora.git
 ```
 
 ---
@@ -40,7 +40,7 @@ git clone https://github.com/guilhermejerei/Calculator-JS.git
 ## Estrutura
 
 ```
-Calculator-JS/
+Calculadora/
 ├── index.html       — estrutura da calculadora
 ├── style.css        — estilos, layout e animações
 ├── script.js        — lógica de cálculo e interatividade
